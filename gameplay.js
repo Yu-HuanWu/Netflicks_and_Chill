@@ -248,6 +248,7 @@ function gameLoop() {
     
     if (!gameStarted || gameOver) {
         drawMessages();
+        gameStarted = false;
     } else {
         drawPlayer();
         drawPlayerBullets();

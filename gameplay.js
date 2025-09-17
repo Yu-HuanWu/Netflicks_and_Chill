@@ -19,9 +19,9 @@ const player = {
     y: canvas.height / 2 - 25,
     width: 100,
     height: 100,
-    speed: 5,
+    speed: 3,
     bullets: [],
-    shootCooldown: 15,
+    shootCooldown: 35,
     shootTimer: 0,
     shootingAnimationTimer: 0,
 };
@@ -106,7 +106,7 @@ function updatePlayer() {
             y: player.y + 10,
             width: 100,
             height: 80,
-            speed: 8
+            speed: 5
         });
         player.shootTimer = player.shootCooldown;
         player.shootingAnimationTimer = 15;

@@ -1,6 +1,13 @@
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
+const playerImage = new Image();
+playerImage.src = 'hand-default.png';
+const playerFlickImage = new Image();
+playerFlickImage.src = 'hand-flick.png';
+const netImage = new Image();
+netImage.src = 'net.png';
+
 let score = 0;
 let lives = 3;
 let gameOver = false;
@@ -10,31 +17,29 @@ let keys = {};
 const player = {
     x: 30,
     y: canvas.height / 2 - 25,
-    width: 50,
-    height: 50,
+    width: 100,
+    height: 100,
     speed: 5,
     bullets: [],
     shootCooldown: 15,
-    shootTimer: 0
+    shootTimer: 0,
+    shootingAnimationTimer: 0,
 };
 
 let enemy = {};
 
 function drawPlayer() {
     if (lives <= 0) return;
-    ctx.fillStyle = '#0f0';
-    ctx.beginPath();
-    ctx.moveTo(player.x + player.width / 2, player.y);
-    ctx.lineTo(player.x, player.y + player.height);
-    ctx.lineTo(player.x + player.width, player.y + player.height);
-    ctx.closePath();
-    ctx.fill();
+    if (player.shootingAnimationTimer > 0) {
+        ctx.drawImage(playerFlickImage, player.x, player.y, player.width, player.height);
+    } else {
+        ctx.drawImage(playerImage, player.x, player.y, player.width, player.height);
+    }
 }
 
 function drawPlayerBullets() {
     for (const bullet of player.bullets) {
-        ctx.fillStyle = '#ff0'; // Yellow bullet
-        ctx.fillRect(bullet.x, bullet.y, bullet.width, bullet.height);
+        ctx.drawImage(netImage, bullet.x, bullet.y, bullet.width, bullet.height);
     }
 }
 
@@ -97,17 +102,22 @@ function updatePlayer() {
 
     if (keys['Space'] && player.shootTimer <= 0) {
         player.bullets.push({
-            x: player.x + player.width,
-            y: player.y + player.height / 2 - 2.5,
-            width: 15,
-            height: 5,
+            x: player.x + player.width -10,
+            y: player.y + 10,
+            width: 100,
+            height: 80,
             speed: 8
         });
         player.shootTimer = player.shootCooldown;
+        player.shootingAnimationTimer = 15;
     }
 
     if (player.shootTimer > 0) {
         player.shootTimer--;
+    }
+
+    if (player.shootingAnimationTimer > 0) {
+        player.shootingAnimationTimer--;
     }
 
     player.bullets.forEach((bullet, index) => {
@@ -149,6 +159,21 @@ function updateEnemy() {
 }
 
 function checkCollisions() {
+
+    player.bullets.forEach((playerBullet, pIndex) => {
+        enemy.bullets.forEach((enemyBullet, eIndex) => {
+            if (
+                playerBullet.x < enemyBullet.x + enemyBullet.width &&
+                playerBullet.x + playerBullet.width > enemyBullet.x &&
+                playerBullet.y < enemyBullet.y + enemyBullet.height &&
+                playerBullet.y + playerBullet.height > enemyBullet.y
+            ) {
+                player.bullets.splice(pIndex, 1);
+                enemy.bullets.splice(eIndex, 1);
+            }
+        });
+    });
+
     player.bullets.forEach((bullet, bIndex) => {
         if (
             enemy.alive &&
@@ -165,8 +190,8 @@ function checkCollisions() {
 
     enemy.bullets.forEach((bullet, bIndex) => {
         if (
-            player.x < bullet.x + bullet.width &&
-            player.x + player.width > bullet.x &&
+            (player.x + 20) < bullet.x + bullet.width &&
+            (player.x + 20) + (player.width - 50) > bullet.x &&
             player.y < bullet.y + bullet.height &&
             player.y + player.height > bullet.y
         ) {

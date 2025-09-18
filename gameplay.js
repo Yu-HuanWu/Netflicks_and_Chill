@@ -154,7 +154,7 @@ function updateEnemy() {
             speed: 4    
         });
         enemy.shootTimer = enemy.shootCooldown;
-        enemy.shootingAnimationTimer = 25;
+        enemy.shootingAnimationTimer = 45;
     } else {
         enemy.shootTimer--;
     }
@@ -178,12 +178,13 @@ function checkCollisions() {
         enemy.bullets.forEach((enemyBullet, eIndex) => {
             if (
                 playerBullet.x < enemyBullet.x + enemyBullet.width &&
-                playerBullet.x + playerBullet.width > enemyBullet.x &&
+                playerBullet.x - 40 + playerBullet.width > enemyBullet.x &&
                 playerBullet.y < enemyBullet.y + enemyBullet.height &&
                 playerBullet.y + playerBullet.height > enemyBullet.y
             ) {
                 player.bullets.splice(pIndex, 1);
                 enemy.bullets.splice(eIndex, 1);
+                score += 100;
             }
         });
     });
@@ -191,10 +192,10 @@ function checkCollisions() {
     player.bullets.forEach((bullet, bIndex) => {
         if (
             enemy.alive &&
-            bullet.x < enemy.x + enemy.width &&
-            bullet.x + bullet.width > enemy.x &&
-            bullet.y < enemy.y + enemy.height &&
-            bullet.y + bullet.height > enemy.y
+            bullet.x < enemy.x - 40 + enemy.width &&
+            bullet.x + bullet.width > enemy.x + 40 &&
+            bullet.y < enemy.y - 30 + enemy.height &&
+            bullet.y + bullet.height > enemy.y + 30
         ) {
             enemy.alive = false;
             player.bullets.splice(bIndex, 1);

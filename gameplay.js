@@ -7,6 +7,10 @@ const playerFlickImage = new Image();
 playerFlickImage.src = 'hand-flick.png';
 const netImage = new Image();
 netImage.src = 'net.png';
+const fridgeImage = new Image();
+fridgeImage.src = 'fridge-default.png';
+const fridgeOpenImage = new Image();
+fridgeOpenImage.src = 'fridge-open.png';
 
 let score = 0;
 let lives = 3;
@@ -47,28 +51,33 @@ function spawnEnemy() {
     enemy = {
         x: canvas.width - 100,
         y: canvas.height / 2 - 25, 
-        width: 50, 
-        height: 70,
+        width: 100, 
+        height: 120,
         speed: 3,
         direction: 1,
         alive: true,
         bullets: [],
         shootCooldown: 75,
-        shootTimer: Math.random() * 10
+        shootTimer: Math.random() * 10,
+        shootingAnimationTimer: 0
     };
 
 }
 
 function drawEnemy() {
+    console.log('huh')
     if (enemy.alive) {
-        ctx.fillStyle = '#f00';
-        ctx.fillRect(enemy.x, enemy.y, enemy.width, enemy.height);
+        if (enemy.shootingAnimationTimer > 0) {
+            ctx.drawImage(fridgeOpenImage, enemy.x, enemy.y, enemy.width, enemy.height);
+        } else {
+            ctx.drawImage(fridgeImage, enemy.x, enemy.y, enemy.width, enemy.height);
+        }
     }
 }
 
 function drawEnemyBullets() {
     for (const bullet of enemy.bullets) {
-        ctx.fillStyle = '#f0f';
+        ctx.fillStyle = '#A5F2F3';
         ctx.fillRect(bullet.x, bullet.y, bullet.width, bullet.height);
     }
 }
@@ -145,8 +154,13 @@ function updateEnemy() {
             speed: 4    
         });
         enemy.shootTimer = enemy.shootCooldown;
+        enemy.shootingAnimationTimer = 25;
     } else {
         enemy.shootTimer--;
+    }
+
+    if (enemy.shootingAnimationTimer > 0) {
+        enemy.shootingAnimationTimer--;
     }
 
     // Update enemy bullet positions

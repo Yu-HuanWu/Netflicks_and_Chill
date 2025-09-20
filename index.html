@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Netflick & Chill</title>
+    <title>Netflicks & Chill</title>
     <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -11,7 +11,19 @@
     <div class="netflix-logo-text">Netflicks & Chill</div>
     <canvas id="gameCanvas" width="700" height="600"></canvas>
     <div id="instructions">
-        Move: [WASD] or [←↑→↓] | Flick Net: [Spacebar]
+        Move with D-Pad | Shoot with [A]
+    </div>
+
+    <div id="controls">
+        <div id="dpad">
+            <div id="btn-up" class="dpad-btn"></div>
+            <div id="btn-left" class="dpad-btn"></div>
+            <div id="btn-right" class="dpad-btn"></div>
+            <div id="btn-down" class="dpad-btn"></div>
+        </div>
+        <div id="action-button-container">
+            <button id="action-btn">A</button>
+        </div>
     </div>
 
     <script src="gameplay.js"></script>

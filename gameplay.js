@@ -93,6 +93,47 @@ document.addEventListener('keyup', (e) => {
     keys[e.code] = false;
 });
 
+// --- MOBILE CONTROLS EVENT LISTENERS ---
+const btnUp = document.getElementById('btn-up');
+const btnDown = document.getElementById('btn-down');
+const btnLeft = document.getElementById('btn-left');
+const btnRight = document.getElementById('btn-right');
+const btnAction = document.getElementById('action-btn');
+
+function handleControlPress(e, key, isPressed) {
+    e.preventDefault();
+    keys[key] = isPressed;
+    if (key === 'Space' && isPressed && !gameStarted) {
+        startGame();
+    }
+}
+
+// Map buttons to keyboard event codes
+btnUp.addEventListener('mousedown', (e) => handleControlPress(e, 'ArrowUp', true));
+btnUp.addEventListener('mouseup', (e) => handleControlPress(e, 'ArrowUp', false));
+btnUp.addEventListener('touchstart', (e) => handleControlPress(e, 'ArrowUp', true), { passive: false });
+btnUp.addEventListener('touchend', (e) => handleControlPress(e, 'ArrowUp', false));
+
+btnDown.addEventListener('mousedown', (e) => handleControlPress(e, 'ArrowDown', true));
+btnDown.addEventListener('mouseup', (e) => handleControlPress(e, 'ArrowDown', false));
+btnDown.addEventListener('touchstart', (e) => handleControlPress(e, 'ArrowDown', true), { passive: false });
+btnDown.addEventListener('touchend', (e) => handleControlPress(e, 'ArrowDown', false));
+
+btnLeft.addEventListener('mousedown', (e) => handleControlPress(e, 'ArrowLeft', true));
+btnLeft.addEventListener('mouseup', (e) => handleControlPress(e, 'ArrowLeft', false));
+btnLeft.addEventListener('touchstart', (e) => handleControlPress(e, 'ArrowLeft', true), { passive: false });
+btnLeft.addEventListener('touchend', (e) => handleControlPress(e, 'ArrowLeft', false));
+
+btnRight.addEventListener('mousedown', (e) => handleControlPress(e, 'ArrowRight', true));
+btnRight.addEventListener('mouseup', (e) => handleControlPress(e, 'ArrowRight', false));
+btnRight.addEventListener('touchstart', (e) => handleControlPress(e, 'ArrowRight', true), { passive: false });
+btnRight.addEventListener('touchend', (e) => handleControlPress(e, 'ArrowRight', false));
+
+btnAction.addEventListener('mousedown', (e) => handleControlPress(e, 'Space', true));
+btnAction.addEventListener('mouseup', (e) => handleControlPress(e, 'Space', false));
+btnAction.addEventListener('touchstart', (e) => handleControlPress(e, 'Space', true), { passive: false });
+btnAction.addEventListener('touchend', (e) => handleControlPress(e, 'Space', false));
+
 function updatePlayer() {
     if (lives <= 0) return;
 
@@ -290,6 +331,18 @@ function startGame() {
     gameStarted = true;
     player.bullets = [];
     spawnEnemy();
+}
+
+function isMobile() {
+    return window.innerWidth <= 768;
+}
+
+const controlsDiv = document.getElementById('controls');
+const instructionsDiv = document.getElementById('instructions');
+
+if (!isMobile()) {
+    controlsDiv.classList.add('hidden');
+    instructionsDiv.innerText = "Move: [WASD] or [←↑→↓] | Shoot: [Spacebar]";
 }
 
 // Start the game loop

@@ -11,6 +11,8 @@ const fridgeImage = new Image();
 fridgeImage.src = 'fridge-default.png';
 const fridgeOpenImage = new Image();
 fridgeOpenImage.src = 'fridge-open.png';
+const icicleImage = new Image();
+icicleImage.src = 'icicle.png';
 
 let score = 0;
 let lives = 3;
@@ -76,8 +78,7 @@ function drawEnemy() {
 
 function drawEnemyBullets() {
     for (const bullet of enemy.bullets) {
-        ctx.fillStyle = '#A5F2F3';
-        ctx.fillRect(bullet.x, bullet.y, bullet.width, bullet.height);
+        ctx.drawImage(icicleImage, bullet.x, bullet.y, bullet.width, bullet.height);
     }
 }
 
@@ -148,8 +149,8 @@ function updateEnemy() {
         enemy.bullets.push({
             x: enemy.x,
             y: enemy.y + enemy.height / 2 - 5,
-            width: 10,
-            height: 10,
+            width: 60,
+            height: 60,
             speed: 4    
         });
         enemy.shootTimer = enemy.shootCooldown;
@@ -178,8 +179,8 @@ function checkCollisions() {
             if (
                 playerBullet.x < enemyBullet.x + enemyBullet.width &&
                 playerBullet.x - 40 + playerBullet.width > enemyBullet.x &&
-                playerBullet.y < enemyBullet.y + enemyBullet.height &&
-                playerBullet.y + playerBullet.height > enemyBullet.y
+                playerBullet.y < enemyBullet.y + enemyBullet.height - 30 &&
+                playerBullet.y + playerBullet.height - 30 > enemyBullet.y
             ) {
                 player.bullets.splice(pIndex, 1);
                 enemy.bullets.splice(eIndex, 1);
@@ -205,9 +206,9 @@ function checkCollisions() {
     enemy.bullets.forEach((bullet, bIndex) => {
         if (
             (player.x + 20) < bullet.x + bullet.width &&
-            (player.x + 20) + (player.width - 50) > bullet.x &&
-            player.y < bullet.y + bullet.height &&
-            player.y + player.height > bullet.y
+            (player.x + 20) + (player.width - 60) > bullet.x &&
+            player.y < bullet.y + bullet.height - 30 &&
+            player.y + player.height - 30 > bullet.y
         ) {
             enemy.bullets.splice(bIndex, 1);
             playerHit();

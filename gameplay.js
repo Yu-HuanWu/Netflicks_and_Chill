@@ -65,7 +65,6 @@ function spawnEnemy() {
 }
 
 function drawEnemy() {
-    console.log('huh')
     if (enemy.alive) {
         if (enemy.shootingAnimationTimer > 0) {
             ctx.drawImage(fridgeOpenImage, enemy.x, enemy.y, enemy.width, enemy.height);

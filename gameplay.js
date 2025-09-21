@@ -61,13 +61,31 @@ function spawnEnemy() {
         bullets: [],
         shootCooldown: 75,
         shootTimer: Math.random() * 10,
-        shootingAnimationTimer: 0
+        shootingAnimationTimer: 0,
+        health: 5,
+        maxHealth: 5
     };
 
 }
 
 function drawEnemy() {
     if (enemy.alive) {
+        const healthBarWidth = enemy.width;
+        const healthBarHeight = 8;
+        const healthBarX = enemy.x;
+        const healthBarY = enemy.y - 15;
+        ctx.fillStyle = '#555';
+        ctx.fillRect(healthBarX, healthBarY, healthBarWidth, healthBarHeight);
+        const currentHealthWidth = healthBarWidth * (enemy.health / enemy.maxHealth);
+        if ((enemy.health / enemy.maxHealth) < 0.25) {
+            ctx.fillStyle = '#c71100';
+        } else if ((enemy.health / enemy.maxHealth) < 0.5) {
+            ctx.fillStyle = '#f7eb05';
+        } else {
+            ctx.fillStyle = '#00ff00';
+        }
+        ctx.fillRect(healthBarX, healthBarY, currentHealthWidth, healthBarHeight);    
+
         if (enemy.shootingAnimationTimer > 0) {
             ctx.drawImage(fridgeOpenImage, enemy.x, enemy.y, enemy.width, enemy.height);
         } else {
@@ -238,9 +256,14 @@ function checkCollisions() {
             bullet.y < enemy.y - 30 + enemy.height &&
             bullet.y + bullet.height > enemy.y + 30
         ) {
-            enemy.alive = false;
             player.bullets.splice(bIndex, 1);
-            score += 500;
+            enemy.health--;
+            score += 100;
+
+            if (enemy.health <= 0) {
+                enemy.alive = false;
+                score += 500;
+            }
         }
     });
 

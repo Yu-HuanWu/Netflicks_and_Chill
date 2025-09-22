@@ -33,6 +33,7 @@ const player = {
 };
 
 let enemy = {};
+let activateEnemySpecialAttack = false;
 
 function drawPlayer() {
     if (lives <= 0) return;
@@ -63,7 +64,9 @@ function spawnEnemy() {
         shootTimer: Math.random() * 10,
         shootingAnimationTimer: 0,
         health: 5,
-        maxHealth: 5
+        maxHealth: 5,
+        specialAttackCooldown: 360,
+        specialAttackTimer: 180 
     };
 
 }
@@ -95,9 +98,22 @@ function drawEnemy() {
 }
 
 function drawEnemyBullets() {
-    for (const bullet of enemy.bullets) {
-        ctx.drawImage(icicleImage, bullet.x, bullet.y, bullet.width, bullet.height);
-    }
+    enemy.bullets.forEach(bullet => {
+        if (bullet.type === 'special') {
+            if (bullet.state === 'activating') {
+                ctx.fillStyle = 'rgba(255, 100, 0, 0.5)';
+                ctx.fillRect(bullet.x - (bullet.width / 2), canvas.height - bullet.hazardHeight, bullet.width, bullet.hazardHeight);
+            } else if (bullet.state === 'active') {
+                ctx.fillStyle = 'rgba(255, 100, 0, 0.5)';
+                ctx.fillRect(bullet.x - (bullet.width / 2), 0, bullet.width, canvas.height);
+            } else {
+                ctx.fillStyle = '#FF5733';
+                ctx.fillRect(bullet.x - (bullet.projectileWidth / 2), bullet.y, bullet.projectileWidth, bullet.projectileHeight);
+            }
+        } else {
+            ctx.drawImage(icicleImage, bullet.x, bullet.y, bullet.width, bullet.height);
+        }
+    });
 }
 
 document.addEventListener('keydown', (e) => {
@@ -206,6 +222,7 @@ function updateEnemy() {
 
     if (enemy.shootTimer <= 0) {
         enemy.bullets.push({
+            type: 'normal',
             x: enemy.x,
             y: enemy.y + enemy.height / 2 - 5,
             width: 60,
@@ -218,15 +235,73 @@ function updateEnemy() {
         enemy.shootTimer--;
     }
 
+    if (enemy.specialAttackTimer <= 0 && activateEnemySpecialAttack) {
+        enemy.bullets.push({
+            type: 'special',
+            state: 'dropping',
+            x: enemy.x,
+            y: enemy.y + enemy.height,
+            speed: 4,
+            targetX: player.x + (player.width / 2), 
+            width: 40,
+            projectileWidth: 15, 
+            projectileHeight: 15,
+            chargeTimer: 120,
+            duration: 120,
+            hazardHeight: 0, 
+            hazardSpeed: 5
+        });
+        enemy.specialAttackTimer = enemy.specialAttackCooldown;
+    } else {
+        enemy.specialAttackTimer--;
+    }
+
     if (enemy.shootingAnimationTimer > 0) {
         enemy.shootingAnimationTimer--;
     }
 
-    // Update enemy bullet positions
     enemy.bullets.forEach((bullet, index) => {
-        bullet.x -= bullet.speed;
-        if (bullet.x < 0) {
-            enemy.bullets.splice(index, 1);
+        if (bullet.type === 'special') {
+            switch (bullet.state) {
+                case 'dropping':
+                    bullet.y += bullet.speed;
+                    if (bullet.y >= canvas.height - bullet.projectileHeight) {
+                        bullet.y = canvas.height - bullet.projectileHeight;
+                        bullet.state = 'sliding';
+                    }
+                    break;
+                case 'sliding':
+                    if (bullet.x < bullet.targetX) {
+                        bullet.x += bullet.speed;
+                        if (bullet.x >= bullet.targetX) bullet.state = 'charging';
+                    } else {
+                        bullet.x -= bullet.speed;
+                        if (bullet.x <= bullet.targetX) bullet.state = 'charging';
+                    }
+                    break;
+                case 'charging':
+                    bullet.chargeTimer--;
+                    if (bullet.chargeTimer <= 0) {
+                        bullet.state = 'activating';
+                    }
+                    break;
+                case 'activating':
+                    bullet.hazardHeight += bullet.hazardSpeed;
+                    if (bullet.hazardHeight >= canvas.height) {
+                        bullet.hazardHeight = canvas.height;
+                        bullet.state = 'active';
+                    }
+                    break;
+                case 'active':
+                    bullet.duration--;
+                    if (bullet.duration <= 0) {
+                        enemy.bullets.splice(index, 1);
+                    }
+                    break;
+            }
+        } else {
+            bullet.x -= bullet.speed;
+            if (bullet.x < 0) enemy.bullets.splice(index, 1);
         }
     });
 }
@@ -263,18 +338,38 @@ function checkCollisions() {
             if (enemy.health <= 0) {
                 enemy.alive = false;
                 score += 500;
+                activateEnemySpecialAttack = true;
             }
         }
     });
 
     enemy.bullets.forEach((bullet, bIndex) => {
-        if (
-            (player.x + 20) < bullet.x + bullet.width &&
-            (player.x + 20) + (player.width - 60) > bullet.x &&
-            player.y < bullet.y + bullet.height - 30 &&
-            player.y + player.height - 30 > bullet.y
-        ) {
-            enemy.bullets.splice(bIndex, 1);
+        let hit = false;
+        if (bullet.type === 'special') {
+            if (bullet.state === 'activating' || bullet.state === 'active') {
+                const hazardX = bullet.x - (bullet.width / 2);
+                const hazardY = (bullet.state === 'activating') ? canvas.height - bullet.hazardHeight : 0;
+                const hazardWidth = bullet.width;
+                const hazardHeight = bullet.hazardHeight;
+
+                if (player.x < hazardX + hazardWidth && player.x + player.width > hazardX &&
+                    player.y < hazardY + hazardHeight && player.y + player.height > hazardY) {
+                    hit = true;
+                }
+            }
+        } else {
+            if (
+                (player.x + 20) < bullet.x + bullet.width &&
+                (player.x + 20) + (player.width - 60) > bullet.x &&
+                player.y < bullet.y + bullet.height - 30 &&
+                player.y + player.height - 30 > bullet.y
+            ) {
+                enemy.bullets.splice(bIndex, 1);
+                hit = true;
+            }
+        }
+
+        if (hit) {
             playerHit();
         }
     });

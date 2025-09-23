@@ -13,6 +13,8 @@ const fridgeOpenImage = new Image();
 fridgeOpenImage.src = 'fridge-open.png';
 const icicleImage = new Image();
 icicleImage.src = 'icicle.png';
+const icecubeImage = new Image();
+icecubeImage.src = 'icecube.png';
 
 let score = 0;
 let lives = 3;
@@ -100,12 +102,26 @@ function drawEnemy() {
 function drawEnemyBullets() {
     enemy.bullets.forEach(bullet => {
         if (bullet.type === 'special') {
-            if (bullet.state === 'activating') {
-                ctx.fillStyle = 'rgba(255, 100, 0, 0.5)';
-                ctx.fillRect(bullet.x - (bullet.width / 2), canvas.height - bullet.hazardHeight, bullet.width, bullet.hazardHeight);
-            } else if (bullet.state === 'active') {
-                ctx.fillStyle = 'rgba(255, 100, 0, 0.5)';
-                ctx.fillRect(bullet.x - (bullet.width / 2), 0, bullet.width, canvas.height);
+            if (bullet.state === 'activating' || bullet.state === 'active') {
+                const hazardX = bullet.x - (bullet.width / 2);
+                const hazardTopY = (bullet.state === 'activating') ? canvas.height - bullet.hazardHeight : 0;
+                const hazardBottomY = canvas.height;
+                const tileHeight = 32; 
+                for (let y = hazardBottomY; y > hazardTopY; y -= tileHeight) {
+                    const drawHeight = Math.min(tileHeight, y - hazardTopY);
+                    
+                    ctx.drawImage(
+                        icecubeImage,
+                        0,
+                        0,
+                        icecubeImage.width,
+                        drawHeight, 
+                        hazardX, 
+                        y - tileHeight,
+                        bullet.width,
+                        drawHeight
+                    );
+                }
             } else {
                 ctx.fillStyle = '#FF5733';
                 ctx.fillRect(bullet.x - (bullet.projectileWidth / 2), bullet.y, bullet.projectileWidth, bullet.projectileHeight);
@@ -352,8 +368,11 @@ function checkCollisions() {
                 const hazardWidth = bullet.width;
                 const hazardHeight = bullet.hazardHeight;
 
-                if (player.x < hazardX + hazardWidth && player.x + player.width > hazardX &&
-                    player.y < hazardY + hazardHeight && player.y + player.height > hazardY) {
+                if (
+                    (player.x + 10)< hazardX + hazardWidth &&
+                    (player.x + 20) + (player.width - 60) > hazardX &&
+                    player.y < hazardY + hazardHeight - 40 && 
+                    player.y + player.height -30 > hazardY) {
                     hit = true;
                 }
             }

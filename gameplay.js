@@ -15,6 +15,8 @@ const icicleImage = new Image();
 icicleImage.src = 'icicle.png';
 const icecubeImage = new Image();
 icecubeImage.src = 'icecube.png';
+const waterdropImage = new Image();
+waterdropImage.src = 'waterdrop.png'
 
 let score = 0;
 let lives = 3;
@@ -122,6 +124,8 @@ function drawEnemyBullets() {
                         drawHeight
                     );
                 }
+            } else if (bullet.state === 'dropping') {
+                ctx.drawImage(waterdropImage, bullet.x - (bullet.projectileWidth / 2), bullet.y, bullet.projectileWidth, bullet.projectileHeight) 
             } else {
                 ctx.fillStyle = '#FF5733';
                 ctx.fillRect(bullet.x - (bullet.projectileWidth / 2), bullet.y, bullet.projectileWidth, bullet.projectileHeight);

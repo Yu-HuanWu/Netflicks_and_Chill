@@ -40,6 +40,7 @@ const player = {
 
 let enemy = {};
 let activateEnemySpecialAttack = false;
+let enemyDefeatCount = 0
 
 function drawPlayer() {
     if (lives <= 0) return;
@@ -69,8 +70,8 @@ function spawnEnemy() {
         shootCooldown: 75,
         shootTimer: Math.random() * 10,
         shootingAnimationTimer: 0,
-        health: 5,
-        maxHealth: 5,
+        health: 3 + enemyDefeatCount,
+        maxHealth: 3 + enemyDefeatCount,
         specialAttackCooldown: 360,
         specialAttackTimer: 180 
     };
@@ -359,6 +360,7 @@ function checkCollisions() {
             if (enemy.health <= 0) {
                 enemy.alive = false;
                 score += 500;
+                enemyDefeatCount ++
                 activateEnemySpecialAttack = true;
             }
         }

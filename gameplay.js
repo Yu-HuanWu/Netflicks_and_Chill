@@ -438,7 +438,11 @@ function drawMessages() {
     } else if (!gameStarted) {
         ctx.fillStyle = 'white';
         ctx.font = '30px "Courier New"';
-        ctx.fillText('Press SPACE to Start', canvas.width / 2, canvas.height / 2);
+        if (isMobile()) {
+            ctx.fillText('Press A to Start', canvas.width / 2, canvas.height / 2);
+        } else {
+            ctx.fillText('Press SPACE to Start', canvas.width / 2, canvas.height / 2);
+        }
     }
     ctx.textAlign = 'left';
 }

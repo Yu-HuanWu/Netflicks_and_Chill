@@ -11,6 +11,8 @@ const fridgeImage = new Image();
 fridgeImage.src = 'fridge-default.png';
 const fridgeOpenImage = new Image();
 fridgeOpenImage.src = 'fridge-open.png';
+const fridgeGlitch1Image = new Image();
+fridgeGlitch1Image.src = 'fridge-glitch1.png';
 const icicleImage = new Image();
 icicleImage.src = 'icicle.png';
 const icecubeImage = new Image();
@@ -20,11 +22,14 @@ waterdropImage.src = 'waterdrop.png'
 const puddleImage = new Image();
 puddleImage.src = 'puddle.png'
 
-let score = 0;
+let exp = 0;
+let playerLevel = 1;
 let lives = 3;
 let gameOver = false;
 let gameStarted = false;
 let keys = {};
+let gameState = 'playing'; // 'playing', 'levelingUp', 'gameOver'
+let perkOptions = [];
 
 const player = {
     x: 30,
@@ -33,10 +38,34 @@ const player = {
     height: 100,
     speed: 3,
     bullets: [],
-    shootCooldown: 35,
+    bulletHeight: 80,
+    shootCooldown: 70,
     shootTimer: 0,
     shootingAnimationTimer: 0,
 };
+
+const allPerks = [
+    {
+        title: "Speed Boost",
+        description: "Increase movement speed by 25%.",
+        apply: (p) => { p.speed += 1; }
+    },
+    {
+        title: "Rapid Flick",
+        description: "Decrease time between net flicking.",
+        apply: (p) => { p.shootCooldown = Math.max(5, p.shootCooldown - 5); }
+    },
+    {
+        title: "Cast a Wider Net",
+        description: "Your nets are 20% wider.",
+        apply: (p) => { p.bulletHeight = p.bulletHeight * 1.2; }
+    },
+    {
+        title: "Extra Members",
+        description: "Gain one extra life.",
+        apply: (p) => { lives++; }
+    },
+];
 
 let enemy = {};
 let activateEnemySpecialAttack = false;
@@ -138,6 +167,82 @@ function drawEnemyBullets() {
     });
 }
 
+function checkScoreForLevelUp() {
+    if (exp >= 1000) {
+        gameState = 'levelingUp';
+        playerLevel++
+        exp = exp - 1000
+        generatePerkOptions();
+    }
+}
+
+function generatePerkOptions() {
+    perkOptions = [];
+    const availablePerks = [...allPerks];
+    for (let i = 0; i < 3; i++) {
+        if (availablePerks.length === 0) break;
+        const randomIndex = Math.floor(Math.random() * availablePerks.length);
+        perkOptions.push(availablePerks.splice(randomIndex, 1)[0]);
+    }
+}
+
+function drawLevelUpScreen() {
+    // Dim the background
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    ctx.fillStyle = 'white';
+    ctx.font = '30px "Courier New"';
+    ctx.textAlign = 'center';
+    ctx.fillText('LEVEL UP! CHOOSE A PERK', canvas.width / 2, 80);
+
+    // Draw the perk option boxes
+    const boxWidth = canvas.width * 0.6;
+    const boxHeight = 80;
+    const startY = 140;
+    const spacing = 20;
+
+    perkOptions.forEach((perk, index) => {
+        const boxY = startY + index * (boxHeight + spacing);
+        const boxX = (canvas.width - boxWidth) / 2;
+        
+        // Store the clickable area on the perk object itself for easy access
+        perk.hitbox = { x: boxX, y: boxY, width: boxWidth, height: boxHeight };
+
+        ctx.strokeStyle = '#0ff';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(perk.hitbox.x, perk.hitbox.y, perk.hitbox.width, perk.hitbox.height);
+
+        ctx.font = '20px "Courier New"';
+        ctx.fillText(perk.title, canvas.width / 2, boxY + 30);
+        
+        ctx.font = '14px "Courier New"';
+        ctx.fillStyle = '#ccc';
+        ctx.fillText(perk.description, canvas.width / 2, boxY + 55);
+        ctx.fillStyle = 'white';
+    });
+    ctx.textAlign = 'left';
+}
+
+function handleLevelUpClick(event) {
+    if (gameState !== 'levelingUp') return;
+
+    const rect = canvas.getBoundingClientRect();
+    const mouseX = event.clientX - rect.left;
+    const mouseY = event.clientY - rect.top;
+
+    perkOptions.forEach(perk => {
+        if (mouseX > perk.hitbox.x && mouseX < perk.hitbox.x + perk.hitbox.width &&
+            mouseY > perk.hitbox.y && mouseY < perk.hitbox.y + perk.hitbox.height) {
+            
+            perk.apply(player);
+            gameState = 'playing';
+            perkOptions = [];
+        }
+    });
+}
+canvas.addEventListener('click', handleLevelUpClick);
+
 document.addEventListener('keydown', (e) => {
     keys[e.code] = true;
     if (e.code === 'Space' && !gameStarted) {
@@ -209,9 +314,9 @@ function updatePlayer() {
     if (keys['Space'] && player.shootTimer <= 0) {
         player.bullets.push({
             x: player.x + player.width -10,
-            y: player.y + 10,
+            y: player.y,
             width: 100,
-            height: 80,
+            height: player.bulletHeight,
             speed: 5
         });
         player.shootTimer = player.shootCooldown;
@@ -228,7 +333,7 @@ function updatePlayer() {
 
     player.bullets.forEach((bullet, index) => {
         bullet.x += bullet.speed;
-        if (bullet.x < 0) {
+        if (bullet.x > canvas.width) {
             player.bullets.splice(index, 1);
         }
     });
@@ -340,7 +445,8 @@ function checkCollisions() {
             ) {
                 player.bullets.splice(pIndex, 1);
                 enemy.bullets.splice(eIndex, 1);
-                score += 100;
+                exp += 100;
+                checkScoreForLevelUp()
             }
         });
     });
@@ -355,13 +461,14 @@ function checkCollisions() {
         ) {
             player.bullets.splice(bIndex, 1);
             enemy.health--;
-            score += 100;
-
+            exp += 100;
+            checkScoreForLevelUp()
             if (enemy.health <= 0) {
                 enemy.alive = false;
-                score += 500;
+                exp += 500;
                 enemyDefeatCount ++
                 activateEnemySpecialAttack = true;
+                checkScoreForLevelUp()
             }
         }
     });
@@ -425,7 +532,8 @@ function playerHit() {
 function drawUI() {
     ctx.fillStyle = '#fff';
     ctx.font = '20px "Courier New"';
-    ctx.fillText(`Score: ${score}`, 10, 25);
+    ctx.fillText(`Exp: ${exp}`, 10, 25);
+    ctx.fillText(`Level: ${playerLevel}`, canvas.width / 2 - 100, 25);
     ctx.fillText(`Lives: ${lives}`, canvas.width - 100, 25);
 }
 
@@ -453,13 +561,19 @@ function gameLoop() {
     if (!gameStarted || gameOver) {
         drawMessages();
         gameStarted = false;
-    } else {
+    } else if (gameState === 'levelingUp') {
         drawPlayer();
         drawPlayerBullets();
         drawEnemy();
         drawEnemyBullets();
         drawUI();
-
+        drawLevelUpScreen();
+    } else if (gameState === 'playing') {
+        drawPlayer();
+        drawPlayerBullets();
+        drawEnemy();
+        drawEnemyBullets();
+        drawUI();
         updatePlayer();
         updateEnemy();
         checkCollisions();
@@ -473,10 +587,15 @@ function gameLoop() {
 }
 
 function startGame() {
-    score = 0;
+    exp = 0;
+    playerLevel = 1;
     lives = 3;
     gameOver = false;
     gameStarted = true;
+    gameState = 'playing';
+    player.speed = 3;
+    player.shootCooldown = 70;
+    player.bulletHeight = 80;
     player.bullets = [];
     spawnEnemy();
 }

@@ -30,6 +30,8 @@ let gameStarted = false;
 let keys = {};
 let gameState = 'playing'; // 'playing', 'levelingUp', 'gameOver'
 let perkOptions = [];
+let selectedPerkIndex = 0;
+let selectPerkReady = false;
 
 const player = {
     x: 30,
@@ -48,7 +50,7 @@ const allPerks = [
     {
         title: "Speed Boost",
         description: "Increase movement speed by 25%.",
-        apply: (p) => { p.speed += 1; }
+        apply: (p) => { p.speed += (p.speed/4); }
     },
     {
         title: "Rapid Flick",
@@ -168,16 +170,18 @@ function drawEnemyBullets() {
 }
 
 function checkScoreForLevelUp() {
-    if (exp >= 1000) {
+    const requiredExp = 1000 + ((playerLevel - 1) * 500)
+    if (exp >= requiredExp) {
         gameState = 'levelingUp';
         playerLevel++
-        exp = exp - 1000
+        exp = exp - requiredExp
         generatePerkOptions();
     }
 }
 
 function generatePerkOptions() {
     perkOptions = [];
+    selectedPerkIndex = -1;
     const availablePerks = [...allPerks];
     for (let i = 0; i < 3; i++) {
         if (availablePerks.length === 0) break;
@@ -209,14 +213,26 @@ function drawLevelUpScreen() {
         // Store the clickable area on the perk object itself for easy access
         perk.hitbox = { x: boxX, y: boxY, width: boxWidth, height: boxHeight };
 
-        ctx.strokeStyle = '#0ff';
+        const isSelected = index === selectedPerkIndex;
+
+        if (isSelected) {
+            ctx.shadowColor = '#0ff';
+            ctx.shadowBlur = 20;
+            ctx.strokeStyle = '#fff';
+        } else {
+            ctx.strokeStyle = '#0ff';
+        }
+
         ctx.lineWidth = 2;
         ctx.strokeRect(perk.hitbox.x, perk.hitbox.y, perk.hitbox.width, perk.hitbox.height);
+
+        ctx.shadowColor = 'transparent';
+        ctx.shadowBlur = 0;
 
         ctx.font = '20px "Courier New"';
         ctx.fillText(perk.title, canvas.width / 2, boxY + 30);
         
-        ctx.font = '14px "Courier New"';
+        ctx.font = '16px "Courier New"';
         ctx.fillStyle = '#ccc';
         ctx.fillText(perk.description, canvas.width / 2, boxY + 55);
         ctx.fillStyle = 'white';
@@ -224,29 +240,28 @@ function drawLevelUpScreen() {
     ctx.textAlign = 'left';
 }
 
-function handleLevelUpClick(event) {
-    if (gameState !== 'levelingUp') return;
-
-    const rect = canvas.getBoundingClientRect();
-    const mouseX = event.clientX - rect.left;
-    const mouseY = event.clientY - rect.top;
-
-    perkOptions.forEach(perk => {
-        if (mouseX > perk.hitbox.x && mouseX < perk.hitbox.x + perk.hitbox.width &&
-            mouseY > perk.hitbox.y && mouseY < perk.hitbox.y + perk.hitbox.height) {
-            
-            perk.apply(player);
-            gameState = 'playing';
-            perkOptions = [];
-        }
-    });
-}
-canvas.addEventListener('click', handleLevelUpClick);
-
 document.addEventListener('keydown', (e) => {
-    keys[e.code] = true;
-    if (e.code === 'Space' && !gameStarted) {
-        startGame();
+    keys[e.code] = true
+    if (gameState === 'levelingUp') {
+        if (e.code === 'ArrowUp' || e.code === 'KeyW') {
+            selectedPerkIndex === -1 && (selectedPerkIndex = 0);
+            selectedPerkIndex = (selectedPerkIndex - 1 + perkOptions.length) % perkOptions.length;
+            selectPerkReady = true;
+        } else if (e.code === 'ArrowDown' || e.code === 'KeyS') {
+            selectedPerkIndex = (selectedPerkIndex + 1) % perkOptions.length;
+            selectPerkReady = true;
+        } else if ((e.code === 'Space' || e.code === 'Enter') && selectPerkReady) {
+            if (perkOptions[selectedPerkIndex]) {
+                perkOptions[selectedPerkIndex].apply(player);
+                gameState = 'playing';
+                perkOptions = [];
+            }
+            selectPerkReady = false;
+        }
+    } else {
+        if (e.code === 'Space' && !gameStarted) {
+            startGame();
+        }
     }
 });
 
@@ -264,9 +279,28 @@ const btnAction = document.getElementById('action-btn');
 function handleControlPress(e, key, isPressed) {
     e.preventDefault();
     keys[key] = isPressed;
-    if (key === 'Space' && isPressed && !gameStarted) {
-        startGame();
+    if (gameState === 'levelingUp') {
+        if (keys['ArrowUp']) {
+            selectedPerkIndex === -1 && (selectedPerkIndex = 0);
+            selectedPerkIndex = (selectedPerkIndex - 1 + perkOptions.length) % perkOptions.length;
+            selectPerkReady = true;
+        } else if (keys['ArrowDown']) {
+            selectedPerkIndex = (selectedPerkIndex + 1) % perkOptions.length;
+            selectPerkReady = true;
+        } else if (keys['Space'] && selectPerkReady) {
+            if (perkOptions[selectedPerkIndex]) {
+                perkOptions[selectedPerkIndex].apply(player);
+                gameState = 'playing';
+                perkOptions = [];
+            }
+            selectPerkReady = false
+        }
+    } else {
+        if (key === 'Space' && isPressed && !gameStarted) {
+            startGame();
+        }
     }
+
 }
 
 // Map buttons to keyboard event codes

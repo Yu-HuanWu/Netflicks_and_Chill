@@ -44,6 +44,7 @@ const player = {
     shootCooldown: 70,
     shootTimer: 0,
     shootingAnimationTimer: 0,
+    shieldTimer: 0,
 };
 
 const allPerks = [
@@ -80,6 +81,25 @@ function drawPlayer() {
     } else {
         ctx.drawImage(playerImage, player.x, player.y, player.width, player.height);
     }
+}
+
+function drawProtectionOrb() {
+    if (player.shieldTimer <= 0) return;
+
+    const orbX = player.x + player.width / 2;
+    const orbY = player.y + player.height / 2;
+    const orbRadius = player.width / 2 + 10;
+
+    ctx.shadowColor = 'rgba(124, 199, 129, 0.9)';
+    ctx.shadowBlur = 30;
+
+    ctx.beginPath();
+    ctx.arc(orbX, orbY, orbRadius, 0, Math.PI * 2); 
+    ctx.fillStyle = 'rgba(162, 244, 168, 0.2)'; 
+    ctx.fill();
+
+    ctx.shadowBlur = 0;
+    ctx.shadowColor = 'transparent';
 }
 
 function drawPlayerBullets() {
@@ -365,6 +385,11 @@ function updatePlayer() {
         player.shootingAnimationTimer--;
     }
 
+    if (player.shieldTimer > 0) {
+        console.log(player.shieldTimer)
+        player.shieldTimer--;
+    }
+
     player.bullets.forEach((bullet, index) => {
         bullet.x += bullet.speed;
         if (bullet.x > canvas.width) {
@@ -536,7 +561,7 @@ function checkCollisions() {
             }
         }
 
-        if (hit) {
+        if (hit && player.shieldTimer <= 0) {
             playerHit();
         }
     });
@@ -560,6 +585,7 @@ function playerHit() {
     } else {
         player.x = 30;
         player.y = canvas.height / 2 - 25 ;
+        player.shieldTimer = 210;
     }
 }
 
@@ -603,6 +629,7 @@ function gameLoop() {
         drawUI();
         drawLevelUpScreen();
     } else if (gameState === 'playing') {
+        drawProtectionOrb();
         drawPlayer();
         drawPlayerBullets();
         drawEnemy();

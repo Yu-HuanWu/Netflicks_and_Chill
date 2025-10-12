@@ -32,6 +32,7 @@ let gameState = 'playing'; // 'playing', 'levelingUp', 'gameOver'
 let perkOptions = [];
 let selectedPerkIndex = 0;
 let selectPerkReady = false;
+let perkShieldTimer = 0;
 
 const player = {
     x: 30,
@@ -56,17 +57,22 @@ const allPerks = [
     {
         title: "Rapid Flick",
         description: "Decrease time between net flicking.",
-        apply: (p) => { p.shootCooldown = Math.max(5, p.shootCooldown - 5); }
+        apply: (p) => { p.shootCooldown = Math.max(20, p.shootCooldown - 20); }
     },
     {
         title: "Cast a Wider Net",
-        description: "Your nets are 20% wider.",
-        apply: (p) => { p.bulletHeight = p.bulletHeight * 1.2; }
+        description: "Your nets are 30% wider.",
+        apply: (p) => { p.bulletHeight = Math.min(canvas.height/3, p.bulletHeight * 1.3); }
     },
     {
         title: "Extra Members",
         description: "Gain one extra life.",
         apply: (p) => { lives++; }
+    },
+    {
+        title: "Firewall",
+        description: "Increase shield time after regeneration.",
+        apply: (p) => { perkShieldTimer += 100; }
     },
 ];
 
@@ -118,7 +124,7 @@ function spawnEnemy() {
         direction: 1,
         alive: true,
         bullets: [],
-        shootCooldown: 75,
+        shootCooldown: Math.max(40, 75 - (enemyDefeatCount*2)),
         shootTimer: Math.random() * 10,
         shootingAnimationTimer: 0,
         health: 3 + enemyDefeatCount,
@@ -202,7 +208,18 @@ function checkScoreForLevelUp() {
 function generatePerkOptions() {
     perkOptions = [];
     selectedPerkIndex = -1;
-    const availablePerks = [...allPerks];
+    const availablePerks = [...allPerks].filter(perk => {
+        if (perk.title === "Rapid Flick" && player.shootCooldown === 20) {
+            return false;
+        }
+        if (perk.title === "Cast a Wider Net" && player.bulletHeight === (canvas.height/3)) {
+            return false;
+        }
+        if (perk.title === "Firewall" && perkShieldTimer > 700) {
+            return false;
+        }
+        return true;
+    });
     for (let i = 0; i < 3; i++) {
         if (availablePerks.length === 0) break;
         const randomIndex = Math.floor(Math.random() * availablePerks.length);
@@ -386,7 +403,6 @@ function updatePlayer() {
     }
 
     if (player.shieldTimer > 0) {
-        console.log(player.shieldTimer)
         player.shieldTimer--;
     }
 
@@ -585,7 +601,7 @@ function playerHit() {
     } else {
         player.x = 30;
         player.y = canvas.height / 2 - 25 ;
-        player.shieldTimer = 210;
+        player.shieldTimer = 210 + perkShieldTimer;
     }
 }
 

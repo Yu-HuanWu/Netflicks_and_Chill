@@ -46,6 +46,8 @@ const player = {
     shootTimer: 0,
     shootingAnimationTimer: 0,
     shieldTimer: 0,
+    shotCounter: 0,
+    ropeBurnCooldown: 20,
 };
 
 const allPerks = [
@@ -73,6 +75,11 @@ const allPerks = [
         title: "Firewall",
         description: "Increase shield time after regeneration.",
         apply: (p) => { perkShieldTimer += 100; }
+    },
+    {
+        title: "Rope Burn",
+        description: "Activate special attack every 15 flicks.",
+        apply: (p) => { p.ropeBurnCooldown -= 5; }
     },
 ];
 
@@ -110,7 +117,16 @@ function drawProtectionOrb() {
 
 function drawPlayerBullets() {
     for (const bullet of player.bullets) {
-        ctx.drawImage(netImage, bullet.x, bullet.y, bullet.width, bullet.height);
+        if (bullet.type === 'special') {
+            console.log('hi')
+            ctx.fillStyle = '#C41E3A';
+            ctx.shadowColor = '#EE4B2B';
+            ctx.shadowBlur = 10;
+            ctx.fillRect(bullet.x, bullet.y, bullet.width, bullet.height);
+            ctx.shadowBlur = 0;
+        } else {
+            ctx.drawImage(netImage, bullet.x, bullet.y, bullet.width, bullet.height);
+        }
     }
 }
 
@@ -217,6 +233,13 @@ function generatePerkOptions() {
         }
         if (perk.title === "Firewall" && perkShieldTimer > 700) {
             return false;
+        }
+        if (perk.title === "Rope Burn") {
+            if (player.ropeBurnCooldown === 5) {
+                return false
+            } else {
+                perk.description = `Activate special attack every ${player.ropeBurnCooldown - 5} flicks.`
+            }
         }
         return true;
     });
@@ -383,13 +406,26 @@ function updatePlayer() {
     }
 
     if (keys['Space'] && player.shootTimer <= 0) {
-        player.bullets.push({
-            x: player.x + player.width -10,
-            y: player.y,
-            width: 100,
-            height: player.bulletHeight,
-            speed: 5
-        });
+        player.shotCounter++;
+        if (player.ropeBurnCooldown < 20 && player.shotCounter % player.ropeBurnCooldown === 0) {
+            player.bullets.push({ 
+                type: "special", 
+                x: player.x + player.width, 
+                y: 0, 
+                width: 10, 
+                height: canvas.height, 
+                speed: 5,
+            });
+        } else {
+            player.bullets.push({
+                type: "normal",
+                x: player.x + player.width -10,
+                y: player.y,
+                width: 100,
+                height: player.bulletHeight,
+                speed: 5
+            });
+        }
         player.shootTimer = player.shootCooldown;
         player.shootingAnimationTimer = 15;
     }
@@ -518,7 +554,9 @@ function checkCollisions() {
                 playerBullet.y < enemyBullet.y + enemyBullet.height - 30 &&
                 playerBullet.y + playerBullet.height - 30 > enemyBullet.y
             ) {
-                player.bullets.splice(pIndex, 1);
+                if (playerBullet.type === "normal") {
+                    player.bullets.splice(pIndex, 1);
+                }
                 enemy.bullets.splice(eIndex, 1);
                 exp += 100;
                 checkScoreForLevelUp()
@@ -536,6 +574,9 @@ function checkCollisions() {
         ) {
             player.bullets.splice(bIndex, 1);
             enemy.health--;
+            if (bullet.type === "special") {
+                enemy.health--;
+            }
             exp += 100;
             checkScoreForLevelUp()
             if (enemy.health <= 0) {
@@ -674,6 +715,8 @@ function startGame() {
     player.shootCooldown = 70;
     player.bulletHeight = 80;
     player.bullets = [];
+    player.shotCounter = 0;
+    player.ropeBurnCooldown = 20;
     spawnEnemy();
 }
 
